@@ -3,13 +3,13 @@
  */
 
 import React from 'react';
-
+import { useState } from 'react';
 import { Box, Button, ButtonGroup, Container, Divider, TextField, Typography } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import './App.css';
 
 class QSO {
-  QSO(date, time, call, qth, rstSent, rstRecd, comments) {
+  constructor(date, time, call, qth, rstSent, rstRecd, comments) {
     this.date = date;
     this.time = time;
     this.call = call;
@@ -17,6 +17,20 @@ class QSO {
     this.rstSent = rstSent;
     this.rstRecd = rstRecd;
     this.comments = comments;
+    this.id = new Date().getTime;
+  }
+
+  asDict() {
+    const newRow = { 
+        id: new Date().getTime(),
+        date: String(this.date),
+        utc: String(this.time),
+        call: String(this.call),
+        qth: String(this.qth),
+        comment: String(this.comments)
+    }
+
+    return newRow;
   }
 }
 
@@ -45,15 +59,17 @@ function fillUTC() {
 }
 
 function getQSOData() {
-  return(new QSO(
-    document.getElementById('date-field').value,
-    document.getElementById('time-field').value,
-    document.getElementById('call-field').value,
-    document.getElementById('qth-field').value,
-    document.getElementById('rst-sent-field').value,
-    document.getElementById('rst-received-field').value,
-    document.getElementById('comment-field').value,
-  ));
+  const newQSO = new QSO(
+    String(document.getElementById('date-field').value),
+    String(document.getElementById('time-field').value),
+    String(document.getElementById('call-field').value),
+    String(document.getElementById('qth-field').value),
+    String(document.getElementById('rst-sent-field').value),
+    String(document.getElementById('rst-received-field').value),
+    String(document.getElementById('comment-field').value),
+  );
+
+  return(newQSO);
 }
 
 /**
@@ -61,12 +77,11 @@ function getQSOData() {
  */
 function Header() {
   const title = "wzlog";
-  const desc = "Amateur radio logbook by VE9WZ"
+  //const desc = "Amateur radio logbook by VE9WZ"
 
   return(
     <Box id="header-box">
       <Typography variant="h1">{title}</Typography>
-      <Typography variant="body1">{desc}</Typography>
     </Box>
   );
 }
@@ -121,14 +136,12 @@ function LogEntryTextFields() {
       />
 
       <TextField
-        required
         id="qth-field"
         label="QTH"
         defaultValue=""
       />
 
       <TextField
-        required
         id="rst-sent-field"
         label="RST Sent"
         defaultValue=""
@@ -136,9 +149,14 @@ function LogEntryTextFields() {
 
 
       <TextField
-        required
         id="rst-received-field"
         label="RST Received"
+        defaultValue=""
+      />
+
+      <TextField
+        id="name-field"
+        label="Name"
         defaultValue=""
       />
 
@@ -154,13 +172,13 @@ function LogEntryTextFields() {
 /**
  * Buttons for entering log data.
  */
-function LogEntryButtons() {
+function LogEntryButtons({onSubmit}) {
   return(
     <Box textAlign='center'>
       <ButtonGroup variant="contained" id="logbuttons">
         <Button onClick={fillDate}>Fill Date</Button>
         <Button onClick={fillUTC}>Fill UTC</Button>
-        <Button style={{backgroundColor: "green"}}>Log</Button>
+        <Button style={{backgroundColor: "green"}} onClick={onSubmit}>Log</Button>
       </ButtonGroup>
     </Box>
   );
@@ -169,12 +187,12 @@ function LogEntryButtons() {
 /**
  * Log entry form.
  */
-function LogEntry() {
+function LogEntry({onSubmit}) {
   return(
     <Box id="log-entry">
       <HorizontalLine text="Log a QSO" />
       <LogEntryTextFields />      
-      <LogEntryButtons />
+      <LogEntryButtons onSubmit={onSubmit} />
     </Box>
   );
 }
@@ -182,16 +200,14 @@ function LogEntry() {
 /**
  * Table of entered logs.
  */
-function LogTable() {
-  const rows = [
-    { id: 1, date: '2023-07-06', utc: '17:07', call: 'VE9WZ', grid: 'FN57fr', comment: 'First QSO!'}
-  ];
+function LogTable({rows}) {
+
   
   const columns = [
     { field: 'date', headerName: 'Date', width: 100 },
-    { field: 'utc', headerName: 'UTC', width: 75 },
+    { field: 'utc', headerName: 'UTC', width: 150 },
     { field: 'call', headerName: 'Callsign', width: 150 },
-    { field: 'grid', headerName: 'Grid Square', width: 100 },
+    { field: 'qth', headerName: 'QTH', width: 100 },
     { field: 'comment', headerName: 'Comment', width: 500 },
   ];
 
@@ -207,11 +223,17 @@ function LogTable() {
 }
 
 function App() {
+  const [rows, setRows] = useState(Array(0));
+
+  //const rows = [
+  //  { id: 1, date: '2023-07-06', utc: '17:07', call: 'VE9WZ', qth: 'FN57fr', comment: 'First QSO!'}
+  //];
+
   return(
     <Container>
       <Header />
-      <LogEntry />
-      <LogTable />
+      <LogEntry onSubmit={() => setRows(rows.concat([getQSOData().asDict()]))}/>
+      <LogTable rows={rows} />
     </Container>
   );
 }
