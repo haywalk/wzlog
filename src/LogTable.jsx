@@ -8,26 +8,26 @@ import { HorizontalLine } from './TextElements';
  */
 function LogTable({rows}) {
 
-    // define the table's columns
-    const columns = [
-      { field: 'date', headerName: 'Date and Time', width: 200 },
-      { field: 'call', headerName: 'Callsign', width: 100 },
-      { field: 'qth', headerName: 'QTH', width: 100 },
-      { field: 'rstSent', headerName: 'RST Sent', width: 100 },
-      { field: 'rstRcvd', headerName: 'RST Rcvd', width: 100 },
-      { field: 'name', headerName: 'Name', width: 100 },
-      { field: 'comment', headerName: 'Comments', width: 100 },
-    ];
+  // define the table's columns
+  const columns = [
+    { field: 'date', headerName: 'Date and Time', width: 200 },
+    { field: 'call', headerName: 'Callsign', width: 100 },
+    { field: 'qth', headerName: 'QTH', width: 100 },
+    { field: 'rstSent', headerName: 'RST Sent', width: 100 },
+    { field: 'rstRcvd', headerName: 'RST Rcvd', width: 100 },
+    { field: 'mode', headerName: 'Mode', width: 100 },
+    { field: 'comment', headerName: 'Comments', width: 300 },
+  ];
   
-    return(
-      <Box id="log-display">
-        <HorizontalLine text="Logged QSOs" />
-  
-        <div style={{ height: 300, width: '100%' }}>
-          <DataGrid rows={rows} columns={columns} />
-        </div>
-      </Box>
-    );
+  return(
+    <Box id="log-display">
+      <HorizontalLine text="Logged QSOs" />
+
+      <div style={{ height: 300, width: '100%' }}>
+        <DataGrid rows={rows} columns={columns} />
+      </div>
+    </Box>
+  );
 }
 
 export default LogTable;
