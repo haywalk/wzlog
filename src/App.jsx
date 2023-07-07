@@ -2,31 +2,43 @@
  * Hayden Walker, 2023-07-06
  */
 
-import React from 'react';
-import { useState } from 'react';
 import { Box, Button, ButtonGroup, Container, Divider, TextField, Typography } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+import React, { useState } from 'react';
 import './App.css';
 
+/**
+ * Store QSO data.
+ */
 class QSO {
-  constructor(date, time, call, qth, rstSent, rstRecd, comments) {
+  /**
+   * Create a new QSO.
+   */
+  constructor(date, time, call, qth, rstSent, rstRecd, name, comments) {
     this.date = date;
     this.time = time;
     this.call = call;
     this.qth = qth;
     this.rstSent = rstSent;
     this.rstRecd = rstRecd;
+    this.name = name;
     this.comments = comments;
     this.id = new Date().getTime;
   }
 
+  /**
+   * Return the QSO as a dictionary (for the DataGrid).
+   */
   asDict() {
     const newRow = { 
         id: new Date().getTime(),
-        date: String(this.date),
+        date: this.date + " " + this.time,
         utc: String(this.time),
         call: String(this.call),
         qth: String(this.qth),
+        rstSent: this.rstSent,
+        rstRcvd: this.rstRecd,
+        name: this.name,
         comment: String(this.comments)
     }
 
@@ -34,30 +46,50 @@ class QSO {
   }
 }
 
+class Field {
+
+  constructor(id, label, required=false, helperText="", value="", error=false) {
+    this.isRequired = required;
+    this.helperText = helperText;
+    this.id = id;
+    this.label = label;
+    this.value = value;
+    this.error = error
+  }
+
+  update(event) {
+    this.value = event.target.value
+  }
+}
+
 /**
- * Automatically fill in the 'date' field.
+ * Return the current date.
  */
-function fillDate() {
+function getDate() {
   const date = new Date();
   const day = String(date.getUTCDate()).padStart(2, '0');
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
+  return year + "-" + month + "-" + day;
 
-  document.getElementById("date-field").value = year + "-" + month + "-" + day;
 }
 
 /**
- * Automatically fill in the 'UTC' field.
+ * Return the current time.
  */
-function fillUTC() {
+function getUTC() {
   const date = new Date();
   const hours = String(date.getUTCHours()).padStart(2, '0');
   const minutes = String(date.getUTCMinutes()).padStart(2, '0');
   const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-
-  document.getElementById("time-field").value = hours + ":" + minutes + ":" + seconds;
+  return hours + ":" + minutes + ":" + seconds;
 }
 
+/**
+ * Create a new QSO from the form inputs.
+ * 
+ * @returns New QSO
+ */
 function getQSOData() {
   const newQSO = new QSO(
     String(document.getElementById('date-field').value),
@@ -66,17 +98,34 @@ function getQSOData() {
     String(document.getElementById('qth-field').value),
     String(document.getElementById('rst-sent-field').value),
     String(document.getElementById('rst-received-field').value),
-    String(document.getElementById('comment-field').value),
+    String(document.getElementById('name-field').value),
+    String(document.getElementById('comment-field').value)
   );
 
   return(newQSO);
 }
 
 /**
+ * Clear the form.
+ */
+function clearForm() {
+  document.getElementById('date-field').value = "";
+  document.getElementById('time-field').value = "";
+  document.getElementById('call-field').value = "";
+  document.getElementById('qth-field').value = "";
+  document.getElementById('rst-sent-field').value = "";
+  document.getElementById('rst-received-field').value = "";
+  document.getElementById('name-field').value = "";
+  document.getElementById('comment-field').value = "";
+}
+
+
+
+/**
  * Page header.
  */
 function Header() {
-  const title = "wzlog";
+  const title = "Logbook";
   //const desc = "Amateur radio logbook by VE9WZ"
 
   return(
@@ -99,9 +148,45 @@ function HorizontalLine({text}) {
   );
 }
 
+function LogEntryTextFields({fields}) {
+  const [value, setValue] = useState("");
+
+
+  return(
+    <Box
+      component="form"
+      sx={{
+        '& .MuiTextField-root': { m: 1, width: '25ch' },
+      }}
+      
+      noValidate
+      autoComplete="off"
+    >
+      {fields.map(field => 
+        <TextField
+          required = {field.isRequired}
+          helperText = {field.helperText}
+          id = {field.id}
+          label = {field.label}
+          value = {field.value}
+          error = {field.error}
+          onChange={field.update}
+        />
+      )}
+
+      <TextField 
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        label="hello"
+        id="test"
+      />
+    </Box>
+  );
+}
+
 /**
  * Text fields for entering log data.
- */
+ *
 function LogEntryTextFields() {
   return(
     <Box
@@ -116,6 +201,7 @@ function LogEntryTextFields() {
 
       <TextField
         required
+        helperText="Enter a date."
         id="date-field"
         label="Date"
         defaultValue=""
@@ -123,6 +209,7 @@ function LogEntryTextFields() {
 
       <TextField
         required
+        helperText="Enter a time."
         id="time-field"
         label="UTC"
         defaultValue=""
@@ -130,6 +217,7 @@ function LogEntryTextFields() {
 
       <TextField
         required
+        helperText="Enter a callsign."
         id="call-field"
         label="Callsign"
         defaultValue=""
@@ -167,17 +255,17 @@ function LogEntryTextFields() {
       />
     </Box>
   );
-}
+}*/
 
 /**
  * Buttons for entering log data.
  */
-function LogEntryButtons({onSubmit}) {
+function LogEntryButtons({onSubmit, onFillUTC, onFillDate}) {
   return(
     <Box textAlign='center'>
       <ButtonGroup variant="contained" id="logbuttons">
-        <Button onClick={fillDate}>Fill Date</Button>
-        <Button onClick={fillUTC}>Fill UTC</Button>
+        <Button onClick={onFillDate}>Fill Date</Button>
+        <Button onClick={onFillUTC}>Fill UTC</Button>
         <Button style={{backgroundColor: "green"}} onClick={onSubmit}>Log</Button>
       </ButtonGroup>
     </Box>
@@ -188,11 +276,30 @@ function LogEntryButtons({onSubmit}) {
  * Log entry form.
  */
 function LogEntry({onSubmit}) {
+  const [fields, setFields] = useState([
+    new Field("date-field", "Date", true),
+    new Field("time-field", "UTC", true),
+    new Field("call-field", "Callsign", true),
+    new Field("qth-field", "QTH"),
+    new Field("rst-sent-field", "RST Sent"),
+    new Field("rst-received-field", "RST Rcvd"),
+    new Field("name-field", "Name"),
+    new Field("comment-field", "Comments")
+  ]);
+
+  function submit() {
+    document.getElementById('test').value = "ASDF";
+  }
+
+  //const fillUTC = () => fields[1].value = getUTC();
+  //const fillDate = () => fields[0].value = getDate();
+
+
   return(
     <Box id="log-entry">
       <HorizontalLine text="Log a QSO" />
-      <LogEntryTextFields />      
-      <LogEntryButtons onSubmit={onSubmit} />
+      <LogEntryTextFields fields={fields} />      
+      <LogEntryButtons onSubmit={submit} onFillUTC={() => fields[1].value = getUTC()} onFillDate={() => fields[0].value = getDate()}/>
     </Box>
   );
 }
@@ -202,13 +309,14 @@ function LogEntry({onSubmit}) {
  */
 function LogTable({rows}) {
 
-  
   const columns = [
-    { field: 'date', headerName: 'Date', width: 100 },
-    { field: 'utc', headerName: 'UTC', width: 150 },
-    { field: 'call', headerName: 'Callsign', width: 150 },
+    { field: 'date', headerName: 'Date and Time', width: 200 },
+    { field: 'call', headerName: 'Callsign', width: 100 },
     { field: 'qth', headerName: 'QTH', width: 100 },
-    { field: 'comment', headerName: 'Comment', width: 500 },
+    { field: 'rstSent', headerName: 'RST Sent', width: 100 },
+    { field: 'rstRcvd', headerName: 'RST Rcvd', width: 100 },
+    { field: 'name', headerName: 'Name', width: 100 },
+    { field: 'comment', headerName: 'Comments', width: 100 },
   ];
 
   return(
@@ -225,14 +333,16 @@ function LogTable({rows}) {
 function App() {
   const [rows, setRows] = useState(Array(0));
 
-  //const rows = [
-  //  { id: 1, date: '2023-07-06', utc: '17:07', call: 'VE9WZ', qth: 'FN57fr', comment: 'First QSO!'}
-  //];
+  function submit() {
+    setRows(rows.concat([getQSOData().asDict()]));
+    clearForm();
+  }
+
 
   return(
     <Container>
       <Header />
-      <LogEntry onSubmit={() => setRows(rows.concat([getQSOData().asDict()]))}/>
+      <LogEntry onSubmit={submit} />
       <LogTable rows={rows} />
     </Container>
   );
